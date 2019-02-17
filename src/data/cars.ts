@@ -18,9 +18,9 @@ export interface CarLoan {
 
 const defaultNewCarLoan: CarLoan = {
   label: 'default',
-  carValue: 25000,
+  carValue: 30000,
   modelYear: 2019,
-  amountFinanced: 18000,
+  amountFinanced: 27000,
   apr: 0.05,
   loanTermMonths: 48
 }
@@ -32,9 +32,9 @@ const modifyCar = (label: string, func: ModifyCarFn) => (car: CarLoan) => ({
   ...func(car)
 })
 
-const noDownPayment = modifyCar('no down payment', car => ({ amountFinanced: car.carValue }))
-const longTermLoan = modifyCar('long term loan', _ => ({ loanTermMonths: 72 }))
-const highInterestLoan = modifyCar('high interest loan', _ => ({ apr: 0.10 }))
+const noDownPayment = modifyCar('no down payment', car => ({ amountFinanced: car.carValue }));
+const longTermLoan = modifyCar('long term loan', _ => ({ loanTermMonths: 72 }));
+const highInterestLoan = modifyCar('high interest loan', _ => ({ apr: 0.10 }));
 
 export const cars: CarLoan[] = [
   defaultNewCarLoan,
