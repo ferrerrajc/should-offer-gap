@@ -7,7 +7,9 @@
     "calc": "ts-node ./src/index.ts"
   },
   "dependencies": {
-    "lodash": "^4.17.11"
+    "lodash": "^4.17.11",
+    "ts-node": "^8.0.2",
+    "typescript": "^3.3.3"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.121"
