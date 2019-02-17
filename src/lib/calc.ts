@@ -1,20 +1,24 @@
 import { maxBy, range } from "lodash";
 import { calcDecay, min, max } from "./utils";
 
+/**
+ * Major assumptions made for simplification:
+ * - the vehicle always loses its value at an exponential rate,
+ *   with a smaller decay rate after the first year
+ * - monthly interest rate can be estimated by apr / 12
+ */
 const FIRST_YEAR_DEPR_RATE = 0.25 / 12;
 const OTHER_DEPR_RATE = 0.125 / 12;
-
-const SHORTEST_TIME_SHOULD_OFFER = 12;
 const MINIMUM_AMOUNT_SHOULD_OFFER = 1000;
 
 /**
  * b(n) = b(n-1) * (1+r) - payment
  * this is the easy balance calculation I used to double check my closed formula
  */
-const nextBalance = (balance: number, rate: number, payment: number) =>
+export const nextBalance = (balance: number, rate: number, payment: number) =>
   balance * (1 + rate) - payment;
 
-const nextBalanceN = (
+export const nextBalanceN = (
   balance: number,
   rate: number,
   payment: number,
@@ -35,7 +39,7 @@ const nextBalanceN = (
  * b(n) = b(0) * (1 + r) ** n - payment * ((1 + r) ** n - 1) / r
  * closed form of the recursive formula in `nextBalance`
  */
-const calcBalance = (
+export const calcBalance = (
   principal: number,
   monthlyRate: number,
   payment: number,
@@ -61,11 +65,8 @@ export const calcPayment = (
 
 /**
  * decay the vehicle value over time
- * Simplifying Assumption:
- * - the vehicle always loses its value at an exponential rate,
- *   with a smaller decay rate after the first year
  */
-const calcVehicleValue = (
+export const calcVehicleValue = (
   initialValue: number,
   months: number,
   isNew: boolean
@@ -81,6 +82,14 @@ const calcVehicleValue = (
   return calcDecay(initialValue, OTHER_DEPR_RATE, months);
 };
 
+/**
+ * An oversimplified way to determine the monthly interest rate from APR.
+ */
+export const aprToMonthlyRate = (apr: number) => apr / 12;
+
+/**
+ * loan balance - vehicle value
+ */
 export const calcGap = (
   initialCarValue: number,
   initialLoanPrincipal: number,
@@ -95,45 +104,42 @@ export const calcGap = (
   );
 };
 
-interface GapStats {
-  maxGap: number;
-  months: number;
-}
 /**
- * returns `{ maxGap: number, months: number }`
- * `maxGap` is the largest difference between the amount owed and the vehicle's value
- * `months` is the number of months that the amount owed is greater than the vehicle's value
+ * returns `maxGap`, the largest difference between the amount owed and the vehicle's value
  */
-const findGapStats = (
+export const findMaxGap = (
   carValue: number,
   modelYear: number,
   amountFinanced: number,
   apr: number,
   loanTermMonths: number
-): GapStats => {
-  const monthlyPayment = calcPayment(amountFinanced, apr / 12, loanTermMonths);
+): number => {
+  const monthlyPayment = calcPayment(
+    amountFinanced,
+    aprToMonthlyRate(apr),
+    loanTermMonths
+  );
   const gapValues = range(loanTermMonths)
-    .map(month => ({
-      gap: calcGap(
+    .map(month =>
+      calcGap(
         carValue,
         amountFinanced,
-        apr / 12,
+        aprToMonthlyRate(apr),
         monthlyPayment,
         modelYear == 2019,
         month
-      ),
-      month
-    }))
-    .filter(value => value.gap > 0);
-  return gapValues.reduce(
-    (acc: GapStats, value) => ({
-      maxGap: max(acc.maxGap, value.gap),
-      months: max(acc.months, value.month)
-    }),
-    { maxGap: 0, months: 0 }
-  );
+      )
+    )
+    .filter(value => value > 0);
+  return gapValues.reduce((maxGap: number, value) => max(maxGap, value), 0);
 };
 
+/**
+ * returns boolean indicating whether or not GAP insurance should be offered
+ * for the vehicle loan in question
+ *
+ * if false is returned, it means that the loan is not upside down by a significant amount
+ */
 export const shouldOfferGap = (
   carValue: number,
   modelYear: number,
@@ -141,15 +147,12 @@ export const shouldOfferGap = (
   apr: number,
   loanTermMonths: number
 ) => {
-  const gapStats = findGapStats(
+  const maxGap = findMaxGap(
     carValue,
     modelYear,
     amountFinanced,
     apr,
     loanTermMonths
   );
-  return (
-    gapStats.months > SHORTEST_TIME_SHOULD_OFFER &&
-    gapStats.maxGap > MINIMUM_AMOUNT_SHOULD_OFFER
-  );
+  return maxGap > MINIMUM_AMOUNT_SHOULD_OFFER;
 };
