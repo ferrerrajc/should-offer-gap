@@ -16,7 +16,7 @@ export interface CarLoan {
   loanTermMonths: number;
 }
 
-const defaultNewCarLoan: CarLoan = {
+export const defaultNewCarLoan: CarLoan = {
   label: 'default',
   carValue: 30000,
   modelYear: 2019,

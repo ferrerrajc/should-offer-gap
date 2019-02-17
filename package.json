@@ -4,7 +4,8 @@
   "main": "src/index.ts",
   "license": "MIT",
   "scripts": {
-    "calc": "ts-node ./src/index.ts"
+    "calc": "ts-node ./src/index.ts",
+    "test": "jest"
   },
   "dependencies": {
     "lodash": "^4.17.11",
@@ -12,6 +13,9 @@
     "typescript": "^3.3.3"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.121"
+    "@types/jest": "^24.0.5",
+    "@types/lodash": "^4.14.121",
+    "jest": "^24.1.0",
+    "ts-jest": "^23.10.5"
   }
 }
